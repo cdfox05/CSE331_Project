@@ -30,6 +30,8 @@ public class Solution {
     public SolutionObject outputPaths() {
         SolutionObject sol = new SolutionObject();
         /* TODO: Your solution goes here */
+
+        System.out.println("hello world");
         return sol;
     }
 }

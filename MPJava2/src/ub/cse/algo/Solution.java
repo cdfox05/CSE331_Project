@@ -31,7 +31,7 @@ public class Solution {
         SolutionObject sol = new SolutionObject();
         /* TODO: Your solution goes here */
 
-        System.out.println("hello world");
+        System.out.println("hello world ");
         return sol;
     }
 }

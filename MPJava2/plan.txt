@@ -1,1 +1,6 @@
 Greedy Algorithm idea: Clients with largest alpha/tolerance goes latest, clients with smallest go first
+Things at play: Client tolerance, Bandwidth, length of paths, packet for each client
+
+250 algo: in a certain number of streets in a distance how many crosswalks can we reach.
+i.e. from the first router/content provider how many clients we can reach in a certain amount of ticks starting with clients at lowest tolerance
+(check for every tolerance level of the lists; say you have 10 clients uniquely numbered, for every distance in ticks, which one has max number of clients you can reach)

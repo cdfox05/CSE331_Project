@@ -30,6 +30,10 @@ public class Solution {
     public SolutionObject outputPaths() {
         SolutionObject sol = new SolutionObject();
         /* TODO: Your solution goes here */
+        sol.paths = Traversals.bfsPaths(this.graph, this.clients);
+        sol.priorities = Traversals.bfs(this.graph, this.clients);
+        sol.bandwidths = this.bandwidths;
+
         return sol;
     }
 }

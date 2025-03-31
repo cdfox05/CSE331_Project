@@ -1,0 +1,1 @@
+Greedy Algorithm idea: Clients with largest alpha/tolerance goes latest, clients with smallest go first

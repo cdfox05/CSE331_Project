@@ -61,7 +61,7 @@ class Revenue {
         if (updated_bandwidths) {
             rev += pen_bandwidth(info.bandwidths, solutionObject.bandwidths, info.costBandwidth);
         }
-
+        System.out.println(complaints);
         return rev;
     }
 

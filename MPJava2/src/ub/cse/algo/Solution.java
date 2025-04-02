@@ -26,11 +26,11 @@ public class Solution{
 public class Comparor implements Comparator<Client> { //Comparator for the tolerance levels for each client for the PQ
     @Override
     public int compare(Client a, Client b) {
-        if (a.alpha > b.alpha) {
+        if (((a.alpha)*info.shortestDelays.get(a.id)) > ((b.alpha) * info.shortestDelays.get(b.id))) {
             if (a.payment > b.payment)
                 return 1;
         }
-        else if (a.alpha == b.alpha) {
+        else if (((a.alpha)*info.shortestDelays.get(a.id) == (b.alpha) * info.shortestDelays.get(b.id))) {
             if (a.payment > b.payment)
                 return 1;
             else
@@ -72,11 +72,10 @@ public class Comparor implements Comparator<Client> { //Comparator for the toler
         //System.out.println(clients); //Debugging
 
         //System.out.println("Bandwidths: " + info.bandwidths); //IMPORTANT
-        //System.out.println("Shortest Delays" + info.shortestDelays); //the shortest delay??? shortest lengths
+        //System.out.println("Shortest Delays" + info.shortestDelays); //THE SHORTEST POSSIBLE DELAY IS MULTIPLIED BY THE CLIENTS TOLERANCE THRESHOLD
         //System.out.println("Clients: " + info.clients); //priority and alpha is important for this
 
-        sol.paths = Traversals.bfsPaths(graph,clients);
-        System.out.println(sol.paths);
+        sol.paths = Traversals.bfsPaths(graph,clients); //instead of bfs maybe we should use dijkstras based off of bandwidths?
 
 
 

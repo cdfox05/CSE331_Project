@@ -95,15 +95,15 @@ public class Solution{
 
 
 class NetworkTree {
-    private Client root;
+    private NetworkNode root;
     private int count;
 
-    public NetworkTree(Client root) {
+    public NetworkTree(NetworkNode root) {
         this.root = root;
         this.count = 1;
     }
 
-    public Client getRoot() {
+    public NetworkNode getRoot() {
         return this.root;
     }
 
@@ -115,7 +115,7 @@ class NetworkTree {
 class NetworkNode {
     private Client client;
     private Boolean isRouter;
-    private PriorityQueue<Client> children;
+    private PriorityQueue<NetworkNode> children;
 
     public NetworkNode(Client client, Boolean isRouter) {
         this.client = client;
@@ -131,15 +131,19 @@ class NetworkNode {
         return this.isRouter;
     }
 
-    public void addChild(Client child) {
+    public void addChild(NetworkNode child) {
         this.children.add(child);
     }
 
-    public Client getBestChild() {
+    public NetworkNode getBestChild() {
         return this.children.poll();
     }
 
-    public Client checkBestChild() {
+    public NetworkNode checkBestChild() {
         return this.children.peek();
+    }
+
+    public Boolean isLeafNode() {
+        return this.children.isEmpty();
     }
 }

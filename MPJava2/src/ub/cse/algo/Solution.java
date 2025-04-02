@@ -26,10 +26,16 @@ public class Solution{
 public class Comparor implements Comparator<Client> { //Comparator for the tolerance levels for each client for the PQ
     @Override
     public int compare(Client a, Client b) {
-        if (a.alpha > b.alpha)
-            return 1;
-        else if (a.alpha == b.alpha)
-            return 0;
+        if (a.alpha > b.alpha) {
+            if (a.payment > b.payment)
+                return 1;
+        }
+        else if (a.alpha == b.alpha) {
+            if (a.payment > b.payment)
+                return 1;
+            else
+                return 0;
+        }
 
         return -1;
     }
@@ -52,13 +58,16 @@ public class Comparor implements Comparator<Client> { //Comparator for the toler
             pq.add(c);
         }
         int i = 0;
+        ArrayList<Client> cList = new ArrayList<>();
         while (!pq.isEmpty()) //sets client priorities based only on tolerance level @alpha
         {
             Client c = pq.poll();
             c.priority = i;
             i++;
+            cList.add(c);
         }
 
+        System.out.println(cList);
         //System.out.println(clients); //Debugging
 
         //System.out.println("Bandwidths: " + info.bandwidths); //IMPORTANT

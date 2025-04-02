@@ -1,5 +1,7 @@
 package ub.cse.algo;
 
+import sun.nio.ch.Net;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -11,6 +13,24 @@ public class Solution{
     private Graph graph;
     private ArrayList<Client> clients;
     private ArrayList<Integer> bandwidths;
+
+    public class Comp implements Comparator<Client> { //Comparator for the tolerance levels for each client for the PQ
+        @Override
+        public int compare(Client a, Client b) {
+            if (((a.alpha)*info.shortestDelays.get(a.id)) > ((b.alpha) * info.shortestDelays.get(b.id))) {
+                if (a.payment > b.payment)
+                    return 1;
+            }
+            else if (((a.alpha)*info.shortestDelays.get(a.id) == (b.alpha) * info.shortestDelays.get(b.id))) {
+                if (a.payment > b.payment)
+                    return 1;
+                else
+                    return 0;
+            }
+
+            return -1;
+        }
+    }
 
     /**
      * Basic Constructor
@@ -24,23 +44,6 @@ public class Solution{
         this.bandwidths = info.bandwidths;
     }
 
-public class Comparor implements Comparator<Client> { //Comparator for the tolerance levels for each client for the PQ
-    @Override
-    public int compare(Client a, Client b) {
-        if (((a.alpha)*info.shortestDelays.get(a.id)) > ((b.alpha) * info.shortestDelays.get(b.id))) {
-            if (a.payment > b.payment)
-                return 1;
-        }
-        else if (((a.alpha)*info.shortestDelays.get(a.id) == (b.alpha) * info.shortestDelays.get(b.id))) {
-            if (a.payment > b.payment)
-                return 1;
-            else
-                return 0;
-        }
-
-        return -1;
-    }
-}
     /**
      * Method that returns the calculated 
      * SolutionObject as found by your algorithm
@@ -87,5 +90,56 @@ public class Comparor implements Comparator<Client> { //Comparator for the toler
         //System.out.println(sol.paths);
 
         return sol;
+    }
+}
+
+
+class NetworkTree {
+    private Client root;
+    private int count;
+
+    public NetworkTree(Client root) {
+        this.root = root;
+        this.count = 1;
+    }
+
+    public Client getRoot() {
+        return this.root;
+    }
+
+    public int getCount() {
+        return this.count;
+    }
+}
+
+class NetworkNode {
+    private Client client;
+    private Boolean isRouter;
+    private PriorityQueue<Client> children;
+
+    public NetworkNode(Client client, Boolean isRouter) {
+        this.client = client;
+        this.isRouter = isRouter;
+        this.children = new PriorityQueue<>();
+    }
+
+    public Client getClient() {
+        return this.client;
+    }
+
+    public Boolean getIsRouter() {
+        return this.isRouter;
+    }
+
+    public void addChild(Client child) {
+        this.children.add(child);
+    }
+
+    public Client getBestChild() {
+        return this.children.poll();
+    }
+
+    public Client checkBestChild() {
+        return this.children.peek();
     }
 }

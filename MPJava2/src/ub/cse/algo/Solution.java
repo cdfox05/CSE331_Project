@@ -63,16 +63,22 @@ public class Comparor implements Comparator<Client> { //Comparator for the toler
         {
             Client c = pq.poll();
             c.priority = i;
-            i++;
-            cList.add(c);
+            sol.priorities.put(c.id,i); //populates the solution objects priorities map
+            i++; //increments the priority by 1
+            //cList.add(c); //Debugging
         }
 
-        System.out.println(cList);
+        //System.out.println(cList); //Debugging
         //System.out.println(clients); //Debugging
 
         //System.out.println("Bandwidths: " + info.bandwidths); //IMPORTANT
-        //System.out.println("Shortest Delays" + info.shortestDelays); //shortest delay??? shortest lengths
+        //System.out.println("Shortest Delays" + info.shortestDelays); //the shortest delay??? shortest lengths
         //System.out.println("Clients: " + info.clients); //priority and alpha is important for this
+
+        sol.paths = Traversals.bfsPaths(graph,clients);
+        System.out.println(sol.paths);
+
+
 
         return sol;
     }

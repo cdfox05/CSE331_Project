@@ -137,13 +137,6 @@ class NetworkNode implements Comparator<NetworkNode> {
 
     @Override
     public int compare(NetworkNode a, NetworkNode b) {
-        if (a.getClient().priority > b.getClient().priority) {
-            return 1;
-        }
-        else if (a.getClient().priority == b.getClient().priority) {
-            return 0;
-        }
-
-        return -1;
+        return a.getClient().payment - b.getClient().payment;
     }
 }

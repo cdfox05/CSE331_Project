@@ -96,11 +96,13 @@ class NetworkTree {
 
 class NetworkNode implements Comparator<NetworkNode> {
     private Client client;
+    private NetworkNode parent;
     private Boolean isRouter;
     private PriorityQueue<NetworkNode> children;
 
-    public NetworkNode(Client client, Boolean isRouter) {
+    public NetworkNode(Client client, NetworkNode parent, Boolean isRouter) {
         this.client = client;
+        this.parent = parent;
         this.isRouter = isRouter;
         this.children = new PriorityQueue<>();
     }
@@ -125,17 +127,22 @@ class NetworkNode implements Comparator<NetworkNode> {
         return this.children.peek();
     }
 
+    public NetworkNode getParent() {
+        return this.parent;
+    }
+
     public Boolean isLeafNode() {
         return this.children.isEmpty();
     }
 
     @Override
-    public int compare(NetworkNode a, NetworkNode b)
-    {
-        if (a.getClient().priority > b.getClient().priority)
+    public int compare(NetworkNode a, NetworkNode b) {
+        if (a.getClient().priority > b.getClient().priority) {
             return 1;
-        else if (a.getClient().priority == b.getClient().priority)
+        }
+        else if (a.getClient().priority == b.getClient().priority) {
             return 0;
+        }
 
         return -1;
     }

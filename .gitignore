@@ -1,0 +1,11 @@
+# Java
+*.class
+
+# IntelliJ IDEA
+out/
+
+# Visual Studio Code
+.vscode/
+
+# macOS
+.DS_Store

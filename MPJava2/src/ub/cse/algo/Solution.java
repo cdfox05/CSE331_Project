@@ -56,7 +56,7 @@ public class Solution{
 
         sol.bandwidths = this.bandwidths;
 
-        PriorityQueue<Client> pq = new PriorityQueue<>(new Comparor());
+        PriorityQueue<Client> pq = new PriorityQueue<>(new Comp());
         for (Client c: this.clients)
         {
             pq.add(c);

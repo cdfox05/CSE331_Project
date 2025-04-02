@@ -2,6 +2,7 @@ package ub.cse.algo;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.PriorityQueue;
 
 public class Solution{
@@ -59,11 +60,13 @@ public class Comparor implements Comparator<Client> { //Comparator for the toler
         }
         int i = 0;
         ArrayList<Client> cList = new ArrayList<>();
+        HashMap<Integer, Float> tolerances = new HashMap<>();
         while (!pq.isEmpty()) //sets client priorities based only on tolerance level @alpha
         {
             Client c = pq.poll();
             c.priority = i;
             sol.priorities.put(c.id,i); //populates the solution objects priorities map
+            tolerances.put(c.id, c.alpha*info.shortestDelays.get(c.id));
             i++; //increments the priority by 1
             //cList.add(c); //Debugging
         }
@@ -71,13 +74,17 @@ public class Comparor implements Comparator<Client> { //Comparator for the toler
         //System.out.println(cList); //Debugging
         //System.out.println(clients); //Debugging
 
-        //System.out.println("Bandwidths: " + info.bandwidths); //IMPORTANT
-        //System.out.println("Shortest Delays" + info.shortestDelays); //THE SHORTEST POSSIBLE DELAY IS MULTIPLIED BY THE CLIENTS TOLERANCE THRESHOLD
-        //System.out.println("Clients: " + info.clients); //priority and alpha is important for this
-
         sol.paths = Traversals.bfsPaths(graph,clients); //instead of bfs maybe we should use dijkstras based off of bandwidths?
 
-
+        //System.out.println("Bandwidths: " + info.bandwidths); //IMPORTANT
+        //System.out.println("Shortest Delays: " + info.shortestDelays); //THE SHORTEST POSSIBLE DELAY IS MULTIPLIED BY THE CLIENTS TOLERANCE THRESHOLD
+        //System.out.println("Clients: " + info.clients); //priority and alpha is important for this
+        //System.out.println("Tolerances: " + tolerances);
+        for (Client client : clients)
+        {
+            System.out.println("Client " + client.id + " Payment: " + client.payment);
+        }
+        //System.out.println(sol.paths);
 
         return sol;
     }

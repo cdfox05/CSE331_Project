@@ -94,6 +94,7 @@ public class Solution{
 }
 
 
+
 class NetworkTree {
     private NetworkNode root;
     private int count;
@@ -112,7 +113,7 @@ class NetworkTree {
     }
 }
 
-class NetworkNode {
+class NetworkNode implements Comparator<NetworkNode>{
     private Client client;
     private Boolean isRouter;
     private PriorityQueue<NetworkNode> children;
@@ -145,5 +146,16 @@ class NetworkNode {
 
     public Boolean isLeafNode() {
         return this.children.isEmpty();
+    }
+
+    @Override
+    public int compare(NetworkNode a, NetworkNode b)
+    {
+        if (a.getClient().priority > b.getClient().priority)
+            return 1;
+        else if (a.getClient().priority == b.getClient().priority)
+            return 0;
+
+        return -1;
     }
 }

@@ -90,6 +90,8 @@ public class Solution{
             curr = queue.poll();
         }
 
+        nTree.setNodes(visited);
+
         return nTree;
     }
 
@@ -110,10 +112,16 @@ public class Solution{
         // System.out.println(nTree.toString());
         // System.out.println(this.bandwidths.toArray().length);
 
-        PriorityQueue<Client> pq = new PriorityQueue<>(new Comp());
-        for (Client c: this.clients) {
-            pq.add(c);
+        // add all leaf nodes in nTree to a queue
+        Queue<NetworkNode> queue = new LinkedList<>();
+        for (NetworkNode n : nTree.getNodes().values()) {
+            if (n.isLeafNode() && !n.isRouter()) {
+                queue.add(n);
+            }
         }
+
+        PriorityQueue<Client> pq = new PriorityQueue<>(new Comp());
+        pq.addAll(this.clients);
 
         int i = 0;
         ArrayList<Client> cList = new ArrayList<>();
@@ -123,7 +131,7 @@ public class Solution{
             c.priority = i;
             sol.priorities.put(c.id,i); // populates the solution objects priorities map
             tolerances.put(c.id, c.alpha*info.shortestDelays.get(c.id));
-            i++; // increments the priority by 1
+            i++; // increments the priority by 1 (maybe not needed for problem 2?)
         }
 
         return sol;
@@ -132,15 +140,25 @@ public class Solution{
 
 class NetworkTree {
     private NetworkNode root;
+    private HashMap<Integer, NetworkNode> nodes;
     private int count;
 
     public NetworkTree(NetworkNode root) {
         this.root = root;
+        this.nodes = null;
         this.count = 1;
     }
 
     public NetworkNode getRoot() {
         return this.root;
+    }
+
+    public HashMap<Integer, NetworkNode> getNodes() {
+        return this.nodes;
+    }
+
+    public void setNodes(HashMap<Integer, NetworkNode> nodes) {
+        this.nodes = nodes;
     }
 
     public int getCount() {
@@ -204,7 +222,7 @@ class NetworkNode implements Comparator<NetworkNode> {
         return this.client;
     }
 
-    public Boolean getIsRouter() {
+    public Boolean isRouter() {
         return this.isRouter;
     }
 

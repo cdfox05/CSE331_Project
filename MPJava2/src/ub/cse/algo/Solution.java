@@ -80,20 +80,17 @@ public class Solution{
      * It returns an ArrayList of the highest paying clients out
      * of the list of reachable clients, and should yield an optimal result
      */
-    private ArrayList<NetworkNode> doAlgorithm(Queue<NetworkNode> queue, NetworkNode provider) {
+    private ArrayList<NetworkNode> doAlgorithm(Queue<NetworkNode> queue, HashSet<NetworkNode> visited, NetworkNode provider) {
         NetworkNode node = queue.poll();
         //every node that is not the provider sends their top b children to their parent node
-        while (!queue.isEmpty() && !node.equals(provider)) {
-            if(!node.isRouter()) {
-                node.sendTopBClients();
-            }
-
-            if (!queue.contains(node.getParent()))
-            {
-                queue.add(node.getParent());
-            }
-
+        while (!queue.isEmpty()) {
             node = queue.poll();
+            node.sendTopBClients();
+            if ( !node.isProvider() && !visited.contains(node.getParent())) {
+                queue.add(node.getParent());
+                visited.add(node.getParent());
+            }
+
         }
         if (!node.equals(provider))
         {
@@ -130,14 +127,16 @@ public class Solution{
 
         // add all leaf nodes in nTree to a queue
         Queue<NetworkNode> queue = new LinkedList<>();
+        HashSet<NetworkNode> visited = new HashSet<>();
         for (NetworkNode n : nTree.getNodes().values()) {
             if (n.isLeafNode() && !n.isRouter()) {
                 queue.add(n);
+                visited.add(n);
             }
         }
         System.out.println("Leaf Nodes: " + queue.size());
 
-        ArrayList<NetworkNode> bestNodes = doAlgorithm(queue, nTree.getRoot());
+        ArrayList<NetworkNode> bestNodes = doAlgorithm(queue, visited, nTree.getRoot());
         if (bestNodes == null)
         {
             return sol;
@@ -317,6 +316,10 @@ class NetworkNode implements Comparator<NetworkNode> {
 
     public Integer getBandwidth() {
         return this.bandwidth;
+    }
+
+    public boolean isProvider(){
+        return this.parent == null;
     }
 
     public void pathAdd(NetworkNode node) {

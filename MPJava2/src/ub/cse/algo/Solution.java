@@ -3,6 +3,7 @@ package ub.cse.algo;
 import com.sun.xml.internal.bind.v2.TODO;
 import sun.nio.ch.Net;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 
@@ -162,7 +163,7 @@ public class Solution{
             }
         }
 
-        TestingFunctions test = new TestingFunctions(clients, sol.bandwidths, sol.priorities, nTree, info);
+        TestingFunctions test = new TestingFunctions(clients, sol.bandwidths, sol.priorities, nTree, info, sol.paths);
 
         test.testBandwidths();
         test.testCounts();
@@ -369,19 +370,21 @@ class TestingFunctions{
     private ArrayList<Client> clientList;
     private ArrayList<Integer> bandwidthList;
     private HashMap<Integer, Integer> priorityMap;
+    private HashMap<Integer, ArrayList<Integer>> pathsMap;
     private NetworkTree tree;
     private Info info;
 
 
 
     public TestingFunctions(ArrayList<Client> clients, ArrayList<Integer> bandwidths,
-                            HashMap<Integer,Integer> priorities, NetworkTree tree, Info info)
+                            HashMap<Integer,Integer> priorities, NetworkTree tree, Info info, HashMap<Integer, ArrayList<Integer>> path)
     {
         this.clientList = clients;
         this.bandwidthList = bandwidths;
         this.priorityMap = priorities;
         this.tree = tree;
         this.info = info;
+        this.pathsMap = path;
     }
 
     public void testBandwidths()
@@ -457,4 +460,22 @@ class TestingFunctions{
 
     }
 
+
+    public void testRoutersInPaths() {
+        int routerCount = 0;
+        for (Integer key : pathsMap.keySet()) {
+            if (tree.getNodes().get(key).isRouter())
+            {
+                routerCount++;
+            }
+        }
+
+        if (routerCount != 0)
+        {
+            System.out.println("!!!ERROR!!! Routers within our solution objects path as a client");
+            System.out.println("number of routers found incorrectly placed: " + routerCount);
+            return;
+        }
+
+}
 }

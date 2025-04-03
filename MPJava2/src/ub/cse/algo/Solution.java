@@ -1,5 +1,6 @@
 package ub.cse.algo;
 
+import com.sun.xml.internal.bind.v2.TODO;
 import sun.nio.ch.Net;
 
 import java.util.ArrayList;
@@ -96,6 +97,54 @@ public class Solution{
         return nTree;
     }
 
+    /**
+     * I dont totally know what this does but Christian wrote it
+     * and I'm keeping it in this method in case we need it
+     * @param pq
+     * @param nTree
+     * @return
+     */
+    SolutionObject ChristiansThing(PriorityQueue<Client> pq, NetworkTree nTree) {
+        SolutionObject sol = new SolutionObject();
+        pq.addAll(this.clients);
+
+        System.out.println(nTree.toString());
+
+        int i = 0;
+        ArrayList<Client> cList = new ArrayList<>();
+        HashMap<Integer, Float> tolerances = new HashMap<>();
+        while (!pq.isEmpty()) { // sets client priorities based only on tolerance level @alpha
+            Client c = pq.poll();
+            c.priority = i;
+            sol.priorities.put(c.id,i); // populates the solution objects priorities map
+            tolerances.put(c.id, c.alpha*info.shortestDelays.get(c.id));
+            i++; // increments the priority by 1 (maybe not needed for problem 2?) ((Priorities are needed for the solution object))
+        }
+
+        return sol;
+    }
+
+    /**
+     * This method performs the algorithm as
+     * designed by Christian Fox, Harper Scott, and Sam Carrillo.
+     * It returns an ArrayList of the highest paying clients out
+     * of the list of reachable clients, and should yield an optimal result
+     */
+    private ArrayList<NetworkNode> doAlgorithm(Queue<NetworkNode> queue, NetworkNode provider) {
+        NetworkNode node = queue.poll();
+        //every node that is not the provider sends their top b children to their parent node
+        while (node != null && !node.equals(provider)) {
+            node = queue.poll();
+            node.sendTopBClients();
+        }
+        PriorityQueue<NetworkNode> pq = node.getPQueue(); //the last queue item remaining should be the provider
+        ArrayList<NetworkNode> clientList = new ArrayList<>();
+        while(!pq.isEmpty()){
+            clientList.add(pq.poll());
+        }
+
+        return clientList; //return an arraylist of the provider's clients
+    }
 
 
     /**
@@ -123,23 +172,18 @@ public class Solution{
             }
         }
 
-        PriorityQueue<Client> pq = new PriorityQueue<>(new Comp());
-        pq.addAll(this.clients);
+        ArrayList<NetworkNode> bestNodes = doAlgorithm(queue, nTree.getRoot());
 
-        System.out.println(nTree.toString());
-
-        int i = 0;
-        ArrayList<Client> cList = new ArrayList<>();
-        HashMap<Integer, Float> tolerances = new HashMap<>();
-        while (!pq.isEmpty()) { // sets client priorities based only on tolerance level @alpha
-            Client c = pq.poll();
-            c.priority = i;
-            sol.priorities.put(c.id,i); // populates the solution objects priorities map
-            tolerances.put(c.id, c.alpha*info.shortestDelays.get(c.id));
-            i++; // increments the priority by 1 (maybe not needed for problem 2?) ((Priorities are needed for the solution object))
+        //turn the bestNodes list into a solution object and return it
+        HashMap<Integer, ArrayList<Integer>> bfsPaths =  Traversals.bfsPaths(graph, clients);
+        for (NetworkNode n : bestNodes) {
+            Integer client = n.getClient().id;
+            sol.paths.put(client, bfsPaths.get(client));
+            sol.bandwidths.add(client, info.bandwidths.get(n.getClient().id));
+            sol.priorities.put(client, n.getClient().payment);
         }
-
         return sol;
+
     }
 }
 

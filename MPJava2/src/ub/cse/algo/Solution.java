@@ -84,18 +84,17 @@ public class Solution{
     private ArrayList<NetworkNode> doAlgorithm(Queue<NetworkNode> queue, HashSet<NetworkNode> visited, NetworkNode provider) {
         NetworkNode node = queue.poll();
         //every node that is not the provider sends their top b children to their parent node
-        while (!queue.isEmpty()) {
-            node = queue.poll();
-            if(!node.isProvider()) {
-                node.sendTopBClients();
-            }
-            if ( !node.isProvider() && !visited.contains(node.getParent())) {
+        while (!queue.isEmpty() && !node.isProvider()) {
+
+            node.sendTopBClients();
+
+            if (!visited.contains(node.getParent())) {
                 queue.add(node.getParent());
                 visited.add(node.getParent());
             }
-
+            node = queue.poll();
         }
-        if (!node.equals(provider))
+        if (!node.isProvider())
         {
             System.out.println("!!!ERROR!!! final node is not the provider. \nCurrent Node: " + node.toString());
             return null;
@@ -157,13 +156,6 @@ public class Solution{
             sol.priorities.put(client, n.getClient().payment);
         }
 
-        for (Client c : clients)
-        {
-            if (bfsPaths.containsKey(c.id))
-            {
-                sol.paths.put(c.id, bfsPaths.remove(c.id));
-            }
-        }
 
         TestingFunctions test = new TestingFunctions(clients, sol.bandwidths, sol.priorities, nTree, info, sol.paths);
 
@@ -461,7 +453,6 @@ class TestingFunctions{
     {
 
     }
-
 
     public void testRoutersInPaths() {
         int routerCount = 0;

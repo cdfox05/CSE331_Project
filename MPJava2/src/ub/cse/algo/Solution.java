@@ -144,7 +144,7 @@ public class Solution{
         {
             return sol;
         }
-
+ 
         System.out.println(bestNodes.size());
         //System.out.println(nTree.toString());
 

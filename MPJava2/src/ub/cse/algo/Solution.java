@@ -76,6 +76,7 @@ public class Solution{
                     NetworkNode node = null;
                     if (client == null) {
                         node = new NetworkNode(new Client(adj, 0, bandwidth, 0, false, false), curr, true);
+                        nTree.incRounterCount();
                     } else {
                         node = new NetworkNode(client, curr, false);
                     }
@@ -123,6 +124,8 @@ public class Solution{
         PriorityQueue<Client> pq = new PriorityQueue<>(new Comp());
         pq.addAll(this.clients);
 
+        System.out.println(nTree.toString());
+
         int i = 0;
         ArrayList<Client> cList = new ArrayList<>();
         HashMap<Integer, Float> tolerances = new HashMap<>();
@@ -131,7 +134,7 @@ public class Solution{
             c.priority = i;
             sol.priorities.put(c.id,i); // populates the solution objects priorities map
             tolerances.put(c.id, c.alpha*info.shortestDelays.get(c.id));
-            i++; // increments the priority by 1 (maybe not needed for problem 2?)
+            i++; // increments the priority by 1 (maybe not needed for problem 2?) ((Priorities are needed for the solution object))
         }
 
         return sol;
@@ -142,11 +145,17 @@ class NetworkTree {
     private NetworkNode root;
     private HashMap<Integer, NetworkNode> nodes;
     private int count;
+    private int routers;
 
     public NetworkTree(NetworkNode root) {
         this.root = root;
         this.nodes = null;
         this.count = 1;
+        if (root.isRouter()) {
+            routers = 1;
+        } else {
+            routers = 0;
+        }
     }
 
     public NetworkNode getRoot() {
@@ -169,12 +178,25 @@ class NetworkTree {
         this.count++;
     }
 
+    public int getRouterCount() {
+        return this.routers;
+    }
+
+    public void incRounterCount() {
+        this.routers++;
+    }
+
+    public int getClientCount() {
+        return this.count - this.routers;
+    }
+
     @Override
     public String toString() {
         String out = new String();
         out += "Depth: 0\n";
 
         int depth = 0;
+        int routers = 0;
         int last = this.root.getClient().id;
         Deque<NetworkNode> queue = new LinkedList<>();
         queue.add(this.root);
@@ -188,6 +210,9 @@ class NetworkTree {
                 out += " (Root)\n";
             }
 
+            if (curr.isRouter())
+                routers++;
+
             queue.addAll(curr.getPQueue());
 
             if (curr.getClient().id == last) {
@@ -199,7 +224,8 @@ class NetworkTree {
             }
         }
 
-        out += "# Nodes: " + this.count;
+
+        out += "# Nodes: " + this.getCount() + ", # Routers: " + this.getRouterCount() + ", # Clients: " + this.getClientCount();
 
         return out;
     }

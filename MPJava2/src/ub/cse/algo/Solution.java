@@ -85,7 +85,9 @@ public class Solution{
         //every node that is not the provider sends their top b children to their parent node
         while (!queue.isEmpty()) {
             node = queue.poll();
-            node.sendTopBClients();
+            if(!node.isProvider()) {
+                node.sendTopBClients();
+            }
             if ( !node.isProvider() && !visited.contains(node.getParent())) {
                 queue.add(node.getParent());
                 visited.add(node.getParent());

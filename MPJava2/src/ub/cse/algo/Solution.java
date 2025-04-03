@@ -3,13 +3,8 @@ package ub.cse.algo;
 import com.sun.xml.internal.bind.v2.TODO;
 import sun.nio.ch.Net;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.HashMap;
-import java.util.Queue;
-import java.util.Deque;
-import java.util.PriorityQueue;
-import java.util.Comparator;
+import java.util.*;
+
 
 public class Solution{
     private Info info;
@@ -29,24 +24,6 @@ public class Solution{
         this.bandwidths = info.bandwidths;
     }
 
-    public class Comp implements Comparator<Client> { //Comparator for the tolerance levels for each client for the PQ
-        @Override
-        public int compare(Client a, Client b) {
-            if (((a.alpha)*info.shortestDelays.get(a.id)) > ((b.alpha) * info.shortestDelays.get(b.id))) {
-                if (a.payment > b.payment) {
-                    return 1;
-                }
-            } else if (((a.alpha)*info.shortestDelays.get(a.id) == (b.alpha) * info.shortestDelays.get(b.id))) {
-                if (a.payment > b.payment) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
-
-            return -1;
-        }
-    }
 
     /**
      * Method that generates the BFS tree for the input graph
@@ -98,33 +75,6 @@ public class Solution{
     }
 
     /**
-     * I dont totally know what this does but Christian wrote it
-     * and I'm keeping it in this method in case we need it
-     * @param pq
-     * @param nTree
-     * @return
-     */
-    SolutionObject ChristiansThing(PriorityQueue<Client> pq, NetworkTree nTree) {
-        SolutionObject sol = new SolutionObject();
-        pq.addAll(this.clients);
-
-        System.out.println(nTree.toString());
-
-        int i = 0;
-        ArrayList<Client> cList = new ArrayList<>();
-        HashMap<Integer, Float> tolerances = new HashMap<>();
-        while (!pq.isEmpty()) { // sets client priorities based only on tolerance level @alpha
-            Client c = pq.poll();
-            c.priority = i;
-            sol.priorities.put(c.id,i); // populates the solution objects priorities map
-            tolerances.put(c.id, c.alpha*info.shortestDelays.get(c.id));
-            i++; // increments the priority by 1 (maybe not needed for problem 2?) ((Priorities are needed for the solution object))
-        }
-
-        return sol;
-    }
-
-    /**
      * This method performs the algorithm as
      * designed by Christian Fox, Harper Scott, and Sam Carrillo.
      * It returns an ArrayList of the highest paying clients out
@@ -134,15 +84,27 @@ public class Solution{
         NetworkNode node = queue.poll();
         //every node that is not the provider sends their top b children to their parent node
         while (!queue.isEmpty() && !node.equals(provider)) {
-            node = queue.poll();
-            if(!node.isRouter()) {
-                node.sendTopBClients();
+
+            node.sendTopBClients();
+
+            if (!queue.contains(node.getParent()))
+            {
+                queue.add(node.getParent());
             }
+
+            node = queue.poll();
+        }
+        if (!node.equals(provider))
+        {
+            System.out.println("!!!ERROR!!! final node is not the provider. \nCurrent Node: " + node.toString());
+            return null;
         }
         PriorityQueue<NetworkNode> pq = node.getPQueue(); //the last queue item remaining should be the provider
         ArrayList<NetworkNode> clientList = new ArrayList<>();
         while(!pq.isEmpty()){
-            clientList.add(pq.poll());
+            NetworkNode client = pq.poll();
+            //System.out.println(client.getClient().payment);
+            clientList.add(client);
         }
 
         return clientList; //return an arraylist of the provider's clients
@@ -160,6 +122,7 @@ public class Solution{
         sol.bandwidths = this.bandwidths;
 
         NetworkTree nTree = this.buildTree();
+        //System.out.println(nTree.toString());
 
         // these print the entire tree with its node count followed
         // by the size of the bandwidth array for debugging purposes
@@ -169,21 +132,42 @@ public class Solution{
         // add all leaf nodes in nTree to a queue
         Queue<NetworkNode> queue = new LinkedList<>();
         for (NetworkNode n : nTree.getNodes().values()) {
-            if (n.isLeafNode() && !n.isRouter()) {
+            if (n.isLeafNode()) {
                 queue.add(n);
             }
         }
+        System.out.println("Leaf Nodes: " + queue.size());
 
         ArrayList<NetworkNode> bestNodes = doAlgorithm(queue, nTree.getRoot());
+        if (bestNodes == null)
+        {
+            return sol;
+        }
+
+        System.out.println(bestNodes.size());
+        //System.out.println(nTree.toString());
 
         //turn the bestNodes list into a solution object and return it
         HashMap<Integer, ArrayList<Integer>> bfsPaths =  Traversals.bfsPaths(graph, clients);
+
         for (NetworkNode n : bestNodes) {
             Integer client = n.getClient().id;
-            sol.paths.put(client, bfsPaths.get(client));
-            sol.bandwidths.add(client, info.bandwidths.get(n.getClient().id));
+            //System.out.println("Client No. " + client + " router? " + n.isRouter());
+            //System.out.println(bfsPaths.get(client));
+            sol.paths.put(client, bfsPaths.remove(client));
             sol.priorities.put(client, n.getClient().payment);
         }
+
+
+
+        TestingFunctions test = new TestingFunctions(clients, sol.bandwidths, sol.priorities, nTree, info, sol.paths);
+
+        test.testBandwidths();
+        test.testCounts();
+        test.testRoutersAndClients();
+        test.testRoutersInPaths();
+
+
         return sol;
 
     }
@@ -251,9 +235,9 @@ class NetworkTree {
         NetworkNode curr = null;
         while (!queue.isEmpty()) {
             curr = queue.poll();
-            out += "Node: " + curr.getClient().id;
+            out += "Node: " + curr.getClient().id + " Payment: " + curr.getClient().payment;
             if (curr.getParent() != null) {
-                out += " || Parent: " + curr.getParent().getClient().id + "\n";
+                out += " || Parent: " + curr.getParent().getClient().id + " Bandwidth: " + curr.getParent().getBandwidth() + "\n";
             } else {
                 out += " (Root)\n";
             }
@@ -285,6 +269,7 @@ class NetworkNode implements Comparator<NetworkNode> {
     private Boolean isRouter;
     private PriorityQueue<NetworkNode> children;
     private int bandwidth;
+    private ArrayList<NetworkNode> path;
 
     public NetworkNode(Client client, NetworkNode parent, Boolean isRouter, ArrayList<Integer> bandwidths) {
         this.client = client;
@@ -292,6 +277,8 @@ class NetworkNode implements Comparator<NetworkNode> {
         this.isRouter = isRouter;
         this.children = new PriorityQueue<>(NetworkNode.this);
         this.bandwidth = bandwidths.get(client.id);
+        this.path = new ArrayList<>();
+        this.path.add(this);
     }
 
     public Client getClient() {
@@ -330,18 +317,140 @@ class NetworkNode implements Comparator<NetworkNode> {
         return this.bandwidth;
     }
 
+    public void pathAdd(NetworkNode node) {
+        this.path.add(node);
+    }
+
+    public ArrayList<NetworkNode> getPath() {
+        return this.path;
+    }
+
+    public void pathReversal() {
+        Stack<NetworkNode> stack = new Stack<>();
+        stack.addAll(this.path);
+
+        this.path.clear();
+
+        while (!stack.isEmpty())
+        {
+            this.path.add(stack.pop());
+        }
+    }
+
     public void sendTopBClients(){
         for (int i = bandwidth; i > 0 && !children.isEmpty(); i--) { //runs for i = bandwidth iterations
             NetworkNode n = getBestChild();
             parent.addChild(n);
-            if( !(isRouter()) ){
-                parent.addChild(this); //add clients own value if they arent a router
+            if( !(this.isRouter()) ){
+                parent.addChild(this); //add clients own value if they aren't a router
             }
         }
+    }
+
+
+    public String toString()
+    {
+        return this.getClient().toString();
     }
 
     @Override
     public int compare(NetworkNode a, NetworkNode b) {
         return a.getClient().payment - b.getClient().payment;
+    }
+}
+
+///Class to test our functions to make sure things are processing correctly
+class TestingFunctions {
+    private ArrayList<Client> clientList;
+    private ArrayList<Integer> bandwidthList;
+    private HashMap<Integer, Integer> priorityMap;
+    private HashMap<Integer, ArrayList<Integer>> pathsMap;
+    private NetworkTree tree;
+    private Info info;
+
+
+
+    public TestingFunctions(ArrayList<Client> clients, ArrayList<Integer> bandwidths,
+                            HashMap<Integer, Integer> priorities, NetworkTree tree, Info info, HashMap<Integer, ArrayList<Integer>> paths) {
+        this.clientList = clients;
+        this.bandwidthList = bandwidths;
+        this.priorityMap = priorities;
+        this.tree = tree;
+        this.info = info;
+        this.pathsMap = paths;
+    }
+
+    public void testBandwidths() {
+        int errorCount = 0;
+        for (int i = 0; i < tree.getNodes().size(); i++) {
+            int currBandwidth = tree.getNodes().get(i).getBandwidth();
+            int actBandwidth = info.bandwidths.get(i);
+            if (currBandwidth != actBandwidth) {
+                System.out.println("!!!ERROR!!! Client No. " + (i + 1) + " has incorrect bandwidth.\nCurrent Bandwidth: "
+                        + currBandwidth + " Actual Bandwidth: " + actBandwidth);
+                errorCount++;
+            }
+
+        }
+
+        if (errorCount != 0) {
+            System.out.println("Number of errors with bandwidth: " + errorCount);
+            return;
+        }
+
+        System.out.println("!!!All client bandwidths are correct!!!");
+    }
+
+    public void testCounts() {
+        if (tree.getCount() != 10876) {
+            System.out.println("!!!ERROR!!! Node Count is incorrect. \nCurrent Count: " + tree.getCount() + " Actual Count: " + 10876);
+            return;
+        } else if (tree.getRouterCount() != 8669) {
+            System.out.println("!!!ERROR!!! Router Count is incorrect. \nCurrent Count: " + tree.getRouterCount() + " Actual Count: " + 8669);
+            return;
+        } else if (tree.getClientCount() != 2207) {
+            System.out.println("!!!ERROR!!! Client Count is incorrect. \nCurrent Count: " + tree.getClientCount() + " Actual Count: " + 2207);
+            return;
+        }
+
+        System.out.println("!!!Counts all returned successfully!!!");
+    }
+
+    public void testRoutersAndClients() {
+        int errorCount = 0;
+        for (NetworkNode node : tree.getNodes().values()) {
+            if (node.isRouter() && clientList.contains(node.getClient())) {
+                System.out.println("!!!ERROR!!! Network Node No. " + node.getClient().id + " is incorrectly set as a Router");
+                errorCount++;
+            } else if (!node.isRouter() && !clientList.contains(node.getClient())) {
+                System.out.println("!!!ERROR!!! Network Node No. " + node.getClient().id + " is incorrectly set as a Client");
+                errorCount++;
+            }
+        }
+        if (errorCount != 0) {
+            System.out.println("Number of errors: " + errorCount);
+            return;
+        }
+
+        System.out.println("!!!All routers and clients are set correctly!!!");
+    }
+
+    public void testRoutersInPaths() {
+        int routerCount = 0;
+        for (Integer key : pathsMap.keySet()) {
+            if (tree.getNodes().get(key).isRouter())
+            {
+                routerCount++;
+            }
+        }
+
+        if (routerCount != 0)
+        {
+            System.out.println("!!!ERROR!!! Routers within our solution objects path as a client");
+            System.out.println("number of routers found incorrectly placed: " + routerCount);
+            return;
+        }
+
+        System.out.println("!!!No routers found!!!");
     }
 }

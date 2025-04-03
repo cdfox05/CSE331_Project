@@ -284,6 +284,16 @@ class NetworkNode implements Comparator<NetworkNode> {
         return this.bandwidth;
     }
 
+    public void sendTopBClients(){
+        for (int i = bandwidth; i > 0 && !children.isEmpty(); i--) { //runs for i = bandwidth iterations
+            NetworkNode n = getBestChild();
+            parent.addChild(n);
+            if( !(isRouter()) ){
+                parent.addChild(this); //add clients own value if they arent a router
+            }
+        }
+    }
+
     @Override
     public int compare(NetworkNode a, NetworkNode b) {
         return a.getClient().payment - b.getClient().payment;

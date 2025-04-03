@@ -133,9 +133,11 @@ public class Solution{
     private ArrayList<NetworkNode> doAlgorithm(Queue<NetworkNode> queue, NetworkNode provider) {
         NetworkNode node = queue.poll();
         //every node that is not the provider sends their top b children to their parent node
-        while (node != null && !node.equals(provider)) {
+        while (!queue.isEmpty() && !node.equals(provider)) {
             node = queue.poll();
-            node.sendTopBClients();
+            if(!node.isRouter()) {
+                node.sendTopBClients();
+            }
         }
         PriorityQueue<NetworkNode> pq = node.getPQueue(); //the last queue item remaining should be the provider
         ArrayList<NetworkNode> clientList = new ArrayList<>();

@@ -53,7 +53,7 @@ public class Solution{
      * @return NetworkTree containing the root node and count
      */
     private NetworkTree buildTree() {
-        NetworkNode provider = new NetworkNode(new Client(this.graph.contentProvider, 0, 0, 0, false, false), null, true);
+        NetworkNode provider = new NetworkNode(new Client(this.graph.contentProvider, 0, 0, 0, false, false), null, true, bandwidths);
         NetworkTree nTree = new NetworkTree(provider);
 
         Queue<NetworkNode> queue = new LinkedList<>();
@@ -75,10 +75,10 @@ public class Solution{
 
                     NetworkNode node = null;
                     if (client == null) {
-                        node = new NetworkNode(new Client(adj, 0, bandwidth, 0, false, false), curr, true);
+                        node = new NetworkNode(new Client(adj, 0, bandwidth, 0, false, false), curr, true, bandwidths);
                         nTree.incRounterCount();
                     } else {
-                        node = new NetworkNode(client, curr, false);
+                        node = new NetworkNode(client, curr, false, bandwidths);
                     }
 
                     curr.addChild(node);
@@ -95,6 +95,8 @@ public class Solution{
 
         return nTree;
     }
+
+
 
     /**
      * Method that returns the calculated 
@@ -236,12 +238,14 @@ class NetworkNode implements Comparator<NetworkNode> {
     private NetworkNode parent;
     private Boolean isRouter;
     private PriorityQueue<NetworkNode> children;
+    private int bandwidth;
 
-    public NetworkNode(Client client, NetworkNode parent, Boolean isRouter) {
+    public NetworkNode(Client client, NetworkNode parent, Boolean isRouter, ArrayList<Integer> bandwidths) {
         this.client = client;
         this.parent = parent;
         this.isRouter = isRouter;
         this.children = new PriorityQueue<>(NetworkNode.this);
+        this.bandwidth = bandwidths.get(client.id);
     }
 
     public Client getClient() {
@@ -274,6 +278,10 @@ class NetworkNode implements Comparator<NetworkNode> {
 
     public Boolean isLeafNode() {
         return this.children.isEmpty();
+    }
+
+    public Integer getBandwidth() {
+        return this.bandwidth;
     }
 
     @Override

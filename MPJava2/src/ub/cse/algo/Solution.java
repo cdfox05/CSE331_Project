@@ -84,8 +84,9 @@ public class Solution{
         NetworkNode node = queue.poll();
         //every node that is not the provider sends their top b children to their parent node
         while (!queue.isEmpty() && !node.equals(provider)) {
-
-            node.sendTopBClients();
+            if(!node.isRouter()) {
+                node.sendTopBClients();
+            }
 
             if (!queue.contains(node.getParent()))
             {
@@ -102,9 +103,7 @@ public class Solution{
         PriorityQueue<NetworkNode> pq = node.getPQueue(); //the last queue item remaining should be the provider
         ArrayList<NetworkNode> clientList = new ArrayList<>();
         while(!pq.isEmpty()){
-            NetworkNode client = pq.poll();
-            //System.out.println(client.getClient().payment);
-            clientList.add(client);
+            clientList.add(pq.poll());
         }
 
         return clientList; //return an arraylist of the provider's clients
@@ -132,7 +131,7 @@ public class Solution{
         // add all leaf nodes in nTree to a queue
         Queue<NetworkNode> queue = new LinkedList<>();
         for (NetworkNode n : nTree.getNodes().values()) {
-            if (n.isLeafNode()) {
+            if (n.isLeafNode() && !n.isRouter()) {
                 queue.add(n);
             }
         }
@@ -152,20 +151,23 @@ public class Solution{
 
         for (NetworkNode n : bestNodes) {
             Integer client = n.getClient().id;
-            //System.out.println("Client No. " + client + " router? " + n.isRouter());
-            //System.out.println(bfsPaths.get(client));
             sol.paths.put(client, bfsPaths.remove(client));
             sol.priorities.put(client, n.getClient().payment);
         }
 
+        for (Client c : clients)
+        {
+            if (bfsPaths.containsKey(c.id))
+            {
+                sol.paths.put(c.id, bfsPaths.remove(c.id));
+            }
+        }
 
-
-        TestingFunctions test = new TestingFunctions(clients, sol.bandwidths, sol.priorities, nTree, info, sol.paths);
+        TestingFunctions test = new TestingFunctions(clients, sol.bandwidths, sol.priorities, nTree, info);
 
         test.testBandwidths();
         test.testCounts();
         test.testRoutersAndClients();
-        test.testRoutersInPaths();
 
 
         return sol;
@@ -360,40 +362,42 @@ class NetworkNode implements Comparator<NetworkNode> {
 }
 
 ///Class to test our functions to make sure things are processing correctly
-class TestingFunctions {
+class TestingFunctions{
     private ArrayList<Client> clientList;
     private ArrayList<Integer> bandwidthList;
     private HashMap<Integer, Integer> priorityMap;
-    private HashMap<Integer, ArrayList<Integer>> pathsMap;
     private NetworkTree tree;
     private Info info;
 
 
 
     public TestingFunctions(ArrayList<Client> clients, ArrayList<Integer> bandwidths,
-                            HashMap<Integer, Integer> priorities, NetworkTree tree, Info info, HashMap<Integer, ArrayList<Integer>> paths) {
+                            HashMap<Integer,Integer> priorities, NetworkTree tree, Info info)
+    {
         this.clientList = clients;
         this.bandwidthList = bandwidths;
         this.priorityMap = priorities;
         this.tree = tree;
         this.info = info;
-        this.pathsMap = paths;
     }
 
-    public void testBandwidths() {
+    public void testBandwidths()
+    {
         int errorCount = 0;
-        for (int i = 0; i < tree.getNodes().size(); i++) {
+        for (int i = 0; i < tree.getNodes().size(); i++)
+        {
             int currBandwidth = tree.getNodes().get(i).getBandwidth();
             int actBandwidth = info.bandwidths.get(i);
-            if (currBandwidth != actBandwidth) {
-                System.out.println("!!!ERROR!!! Client No. " + (i + 1) + " has incorrect bandwidth.\nCurrent Bandwidth: "
+            if (currBandwidth != actBandwidth){
+                System.out.println("!!!ERROR!!! Client No. " + (i+1) + " has incorrect bandwidth.\nCurrent Bandwidth: "
                         + currBandwidth + " Actual Bandwidth: " + actBandwidth);
                 errorCount++;
             }
 
         }
 
-        if (errorCount != 0) {
+        if (errorCount != 0)
+        {
             System.out.println("Number of errors with bandwidth: " + errorCount);
             return;
         }
@@ -401,14 +405,18 @@ class TestingFunctions {
         System.out.println("!!!All client bandwidths are correct!!!");
     }
 
-    public void testCounts() {
+    public void testCounts()
+    {
         if (tree.getCount() != 10876) {
             System.out.println("!!!ERROR!!! Node Count is incorrect. \nCurrent Count: " + tree.getCount() + " Actual Count: " + 10876);
             return;
-        } else if (tree.getRouterCount() != 8669) {
+        }
+        else if (tree.getRouterCount() != 8669) {
             System.out.println("!!!ERROR!!! Router Count is incorrect. \nCurrent Count: " + tree.getRouterCount() + " Actual Count: " + 8669);
             return;
-        } else if (tree.getClientCount() != 2207) {
+        }
+        else if (tree.getClientCount() != 2207)
+        {
             System.out.println("!!!ERROR!!! Client Count is incorrect. \nCurrent Count: " + tree.getClientCount() + " Actual Count: " + 2207);
             return;
         }
@@ -416,18 +424,24 @@ class TestingFunctions {
         System.out.println("!!!Counts all returned successfully!!!");
     }
 
-    public void testRoutersAndClients() {
+    public void testRoutersAndClients()
+    {
         int errorCount = 0;
-        for (NetworkNode node : tree.getNodes().values()) {
-            if (node.isRouter() && clientList.contains(node.getClient())) {
+        for (NetworkNode node : tree.getNodes().values())
+        {
+            if (node.isRouter() && clientList.contains(node.getClient()))
+            {
                 System.out.println("!!!ERROR!!! Network Node No. " + node.getClient().id + " is incorrectly set as a Router");
                 errorCount++;
-            } else if (!node.isRouter() && !clientList.contains(node.getClient())) {
+            }
+            else if (!node.isRouter() && !clientList.contains(node.getClient()))
+            {
                 System.out.println("!!!ERROR!!! Network Node No. " + node.getClient().id + " is incorrectly set as a Client");
                 errorCount++;
             }
         }
-        if (errorCount != 0) {
+        if (errorCount != 0)
+        {
             System.out.println("Number of errors: " + errorCount);
             return;
         }
@@ -435,22 +449,9 @@ class TestingFunctions {
         System.out.println("!!!All routers and clients are set correctly!!!");
     }
 
-    public void testRoutersInPaths() {
-        int routerCount = 0;
-        for (Integer key : pathsMap.keySet()) {
-            if (tree.getNodes().get(key).isRouter())
-            {
-                routerCount++;
-            }
-        }
+    public void testDoAlgo()
+    {
 
-        if (routerCount != 0)
-        {
-            System.out.println("!!!ERROR!!! Routers within our solution objects path as a client");
-            System.out.println("number of routers found incorrectly placed: " + routerCount);
-            return;
-        }
-
-        System.out.println("!!!No routers found!!!");
     }
+
 }

@@ -1,5 +1,6 @@
 package ub.cse.algo;
 
+import com.sun.xml.internal.bind.v2.TODO;
 import sun.nio.ch.Net;
 
 import java.util.ArrayList;
@@ -97,6 +98,28 @@ public class Solution{
     }
 
 
+    /**
+     * This method performs the algorithm as
+     * designed by Christian Fox, Harper Scott, and Sam Carrillo.
+     * It returns an ArrayList of the highest paying clients out
+     * of the list of reachable clients, and should yield an optimal result
+     */
+    private ArrayList<NetworkNode> doAlgorithm(Queue<NetworkNode> queue, NetworkNode provider) {
+        NetworkNode node = queue.poll();
+        //every node that is not the provider sends their top b children to their parent node
+        while (node != null && !node.equals(provider)) {
+            node = queue.poll();
+            node.sendTopBClients();
+        }
+        PriorityQueue<NetworkNode> pq = node.getPQueue(); //the last queue item remaining should be the provider
+        ArrayList<NetworkNode> clientList = new ArrayList<>();
+        while(!pq.isEmpty()){
+            clientList.add(pq.poll());
+        }
+
+        return clientList; //return an arraylist of the provider's clients
+    }
+
 
     /**
      * Method that returns the calculated 
@@ -122,6 +145,15 @@ public class Solution{
                 queue.add(n);
             }
         }
+
+        ArrayList<NetworkNode> bestNodes = doAlgorithm(queue, nTree.getRoot());
+
+        //TODO turn the bestNodes list into a solution object and return it
+
+
+
+
+        /////////// Christian's stuff is below /////////
 
         PriorityQueue<Client> pq = new PriorityQueue<>(new Comp());
         pq.addAll(this.clients);

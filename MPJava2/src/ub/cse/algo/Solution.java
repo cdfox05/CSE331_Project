@@ -89,7 +89,7 @@ public class Solution{
             if(!node.isProvider()) {
                 node.sendTopBClients();
             }
-            if ( !node.isProvider() && !visited.contains(node.getParent())) {
+            if (!visited.contains(node.getParent())) {
                 queue.add(node.getParent());
                 visited.add(node.getParent());
             }

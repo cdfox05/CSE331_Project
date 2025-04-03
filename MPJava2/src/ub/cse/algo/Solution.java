@@ -92,9 +92,10 @@ public class Solution{
                 queue.add(node.getParent());
                 visited.add(node.getParent());
             }
+
             node = queue.poll();
         }
-        if (!node.isProvider())
+        if (!node.equals(provider))
         {
             System.out.println("!!!ERROR!!! final node is not the provider. \nCurrent Node: " + node.toString());
             return null;
@@ -156,6 +157,13 @@ public class Solution{
             sol.priorities.put(client, n.getClient().payment);
         }
 
+        for (Client c : clients)
+        {
+            if (bfsPaths.containsKey(c.id))
+            {
+                sol.paths.put(c.id, bfsPaths.remove(c.id));
+            }
+        }
 
         TestingFunctions test = new TestingFunctions(clients, sol.bandwidths, sol.priorities, nTree, info, sol.paths);
 
@@ -453,6 +461,7 @@ class TestingFunctions{
     {
 
     }
+
 
     public void testRoutersInPaths() {
         int routerCount = 0;

@@ -3,9 +3,12 @@ package ub.cse.algo;
 import sun.nio.ch.Net;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.HashMap;
+import java.util.Queue;
+import java.util.Deque;
 import java.util.PriorityQueue;
+import java.util.Comparator;
 
 public class Solution{
     private Info info;
@@ -45,6 +48,52 @@ public class Solution{
     }
 
     /**
+     * Method that generates the BFS tree for the input graph
+     *
+     * @return NetworkTree containing the root node and count
+     */
+    private NetworkTree buildTree() {
+        NetworkNode provider = new NetworkNode(new Client(this.graph.contentProvider, 0, 0, 0, false, false), null, true);
+        NetworkTree nTree = new NetworkTree(provider);
+
+        Queue<NetworkNode> queue = new LinkedList<>();
+        queue.add(provider);
+        HashMap<Integer, NetworkNode> visited = new HashMap<>();
+        visited.put(this.graph.contentProvider, provider);
+        NetworkNode curr = provider;
+        while (curr != null) {
+            for (int adj : this.graph.get(curr.getClient().id)) {
+                if (!visited.containsKey(adj)) {
+                    int bandwidth = this.bandwidths.get(adj);
+                    Client client = null;
+                    for (Client c : this.clients) {
+                        if (c.id == adj) {
+                            client = c;
+                            break;
+                        }
+                    }
+
+                    NetworkNode node = null;
+                    if (client == null) {
+                        node = new NetworkNode(new Client(adj, 0, bandwidth, 0, false, false), curr, true);
+                    } else {
+                        node = new NetworkNode(client, curr, false);
+                    }
+
+                    curr.addChild(node);
+                    queue.add(node);
+                    visited.put(adj, node);
+                    nTree.incCount();
+                }
+            }
+
+            curr = queue.poll();
+        }
+
+        return nTree;
+    }
+
+    /**
      * Method that returns the calculated 
      * SolutionObject as found by your algorithm
      *
@@ -53,6 +102,13 @@ public class Solution{
     public SolutionObject outputPaths() {
         SolutionObject sol = new SolutionObject();
         sol.bandwidths = this.bandwidths;
+
+        NetworkTree nTree = this.buildTree();
+
+        // these print the entire tree with its node count followed
+        // by the size of the bandwidth array for debugging purposes
+        // System.out.println(nTree.toString());
+        // System.out.println(this.bandwidths.toArray().length);
 
         PriorityQueue<Client> pq = new PriorityQueue<>(new Comp());
         for (Client c: this.clients) {
@@ -74,8 +130,6 @@ public class Solution{
     }
 }
 
-
-
 class NetworkTree {
     private NetworkNode root;
     private int count;
@@ -92,6 +146,45 @@ class NetworkTree {
     public int getCount() {
         return this.count;
     }
+
+    public void incCount() {
+        this.count++;
+    }
+
+    @Override
+    public String toString() {
+        String out = new String();
+        out += "Depth: 0\n";
+
+        int depth = 0;
+        int last = this.root.getClient().id;
+        Deque<NetworkNode> queue = new LinkedList<>();
+        queue.add(this.root);
+        NetworkNode curr = null;
+        while (!queue.isEmpty()) {
+            curr = queue.poll();
+            out += "Node: " + curr.getClient().id;
+            if (curr.getParent() != null) {
+                out += " || Parent: " + curr.getParent().getClient().id + "\n";
+            } else {
+                out += " (Root)\n";
+            }
+
+            queue.addAll(curr.getPQueue());
+
+            if (curr.getClient().id == last) {
+                if (!queue.isEmpty()) {
+                    depth++;
+                    out += "Depth: " + depth + "\n";
+                    last = queue.peekLast().getClient().id;
+                }
+            }
+        }
+
+        out += "# Nodes: " + this.count;
+
+        return out;
+    }
 }
 
 class NetworkNode implements Comparator<NetworkNode> {
@@ -104,7 +197,7 @@ class NetworkNode implements Comparator<NetworkNode> {
         this.client = client;
         this.parent = parent;
         this.isRouter = isRouter;
-        this.children = new PriorityQueue<>();
+        this.children = new PriorityQueue<>(NetworkNode.this);
     }
 
     public Client getClient() {
@@ -113,6 +206,10 @@ class NetworkNode implements Comparator<NetworkNode> {
 
     public Boolean getIsRouter() {
         return this.isRouter;
+    }
+
+    public PriorityQueue<NetworkNode> getPQueue() {
+        return this.children;
     }
 
     public void addChild(NetworkNode child) {

@@ -117,7 +117,7 @@ public class Solution{
         HashMap<NetworkNode, PathItem> edgeTo = new HashMap<>();
         Queue<PathItem> queue = new LinkedList<>();
 
-        queue.add(new PathItem(0, contentProvider));
+        queue.add(new PathItem(1, contentProvider));
         while (!edgeTo.containsKey(target) && !queue.isEmpty()) {
             PathItem item = queue.poll();
             NetworkNode curr = item.node;

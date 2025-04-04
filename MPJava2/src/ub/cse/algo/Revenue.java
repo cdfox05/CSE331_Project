@@ -62,6 +62,7 @@ class Revenue {
             rev += pen_bandwidth(info.bandwidths, solutionObject.bandwidths, info.costBandwidth);
         }
         //System.out.println("Complaints: " + complaints);
+        System.out.println("# of Complaints: " + complaints.size());
         return rev;
     }
 

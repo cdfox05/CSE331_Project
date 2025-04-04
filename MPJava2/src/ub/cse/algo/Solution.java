@@ -72,12 +72,12 @@ public class Solution{
             client = new Client(id, 0, bandwidth, 0, false, false);
 
             if (id == this.graph.contentProvider) {
-                node = new NetworkNode(client, bandwidth, false, true, maxPathLength);
+                node = new NetworkNode(client, bandwidth, false, true, maxPathLength, info);
             } else {
-                node = new NetworkNode(client, bandwidth, false, false, maxPathLength);
+                node = new NetworkNode(client, bandwidth, false, false, maxPathLength, info);
             }
         } else {
-            node = new NetworkNode(client, bandwidth, true, false, maxPathLength);
+            node = new NetworkNode(client, bandwidth, true, false, maxPathLength, info);
         }
 
         return node;
@@ -224,14 +224,16 @@ class NetworkNode implements Comparable<NetworkNode> {
     private Boolean isProvider;
     private int bandwidth;
     int[] bandwidthTicks;
+    Info info;
 
-    public NetworkNode(Client client, int bandwidth, Boolean isClient, Boolean isProvider, int maxPathLength) {
+    public NetworkNode(Client client, int bandwidth, Boolean isClient, Boolean isProvider, int maxPathLength, Info info) {
         this.client = client;
         this.isClient = isClient;
         this.isProvider = isProvider;
         this.bandwidth = bandwidth;
         bandwidthTicks = new int[maxPathLength];
         Arrays.fill(bandwidthTicks, bandwidth);
+        this.info = info;
     }
 
     public Client getClient() {
@@ -256,7 +258,8 @@ class NetworkNode implements Comparable<NetworkNode> {
 
     @Override
     public int compareTo(NetworkNode b) {
-        return (int) (b.getClient().alpha - this.getClient().alpha);
+        return (int) ((this.getClient().alpha*info.shortestDelays.get(this.getClient().id))-(b.getClient().alpha*info.shortestDelays.get(b.getClient().id)));
+        //return this.getClient().payment-b.getClient().payment;
     }
 }
 
@@ -267,6 +270,7 @@ class PathItem{
         this.pathLength = pathLength;
         this.node = node;
     }
+
 }
 
 ///Class to test our functions to make sure things are processing correctly

@@ -256,7 +256,7 @@ class NetworkNode implements Comparable<NetworkNode> {
 
     @Override
     public int compareTo(NetworkNode b) {
-        return b.getClient().payment - this.getClient().payment;
+        return (int) (b.getClient().alpha - this.getClient().alpha);
     }
 }
 

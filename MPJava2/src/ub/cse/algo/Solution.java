@@ -86,14 +86,14 @@ public class Solution{
     private int getMaxPathLength() {
         HashMap<Integer, ArrayList<Integer>> paths = Traversals.bfsPaths(this.graph, this.clients);
 
-        int maxLen = 0;
-        for (ArrayList<Integer> p : paths.values()) {
-            if (p.size() > maxLen) {
-                maxLen = p.size();
+        double maxLen = 0;
+        for (Client c : this.clients) {
+            if(c.alpha * paths.get(c.id).size() > maxLen){
+                maxLen = c.alpha * paths.get(c.id).size();
             }
         }
 
-        return maxLen;
+        return (int)maxLen;
     }
 
     private NetworkNode getProvider(HashMap<NetworkNode, ArrayList<NetworkNode>> graph) {
@@ -231,7 +231,7 @@ class NetworkNode implements Comparable<NetworkNode> {
         this.isProvider = isProvider;
         this.bandwidth = bandwidth;
         bandwidthTicks = new int[maxPathLength];
-        Arrays.fill(bandwidthTicks, 0);
+        Arrays.fill(bandwidthTicks, bandwidth);
     }
 
     public Client getClient() {

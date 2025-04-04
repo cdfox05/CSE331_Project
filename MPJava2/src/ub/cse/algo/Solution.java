@@ -8,7 +8,11 @@ public class Solution{
     private ArrayList<Client> clients;
     private ArrayList<Integer> bandwidths;
     private int maxPathLength;
-
+    /// Necessary Information
+    public HashMap<Integer, int[]> bandwidthLists;
+    public HashMap<Integer, ArrayList<Integer>> bfsPaths;
+    public HashSet<Integer> clientList;
+    public HashMap<Integer, Integer> priorityList;
     /**
      * Basic Constructor
      *
@@ -18,92 +22,23 @@ public class Solution{
         this.info = info;
         this.graph = info.graph;
         this.clients = info.clients;
+
         this.bandwidths = info.bandwidths;
-    }
-
-    private HashMap<NetworkNode, ArrayList<NetworkNode>> convertGraph() {
-        HashMap<NetworkNode, ArrayList<NetworkNode>> graph = new HashMap<>();
-        HashMap<Integer, NetworkNode> hasNode = new HashMap<>();
-        int maxPathLength = getMaxPathLength();
-
-        for (int n : this.graph.keySet()) {
-            if (hasNode.containsKey(n)) {
-                graph.put(hasNode.get(n), new ArrayList<>());
-            } else {
-                NetworkNode node = createNode(n, maxPathLength);
-                hasNode.put(n, node);
-                graph.put(node, new ArrayList<>());
-            }
-
-            for (int a : this.graph.get(n)) {
-                if (hasNode.containsKey(a)) {
-                    graph.get(hasNode.get(n)).add(hasNode.get(a));
-                } else {
-                    NetworkNode node = createNode(a, maxPathLength);
-                    hasNode.put(a, node);
-                    graph.get(hasNode.get(n)).add(hasNode.get(a));
-                }
+        this.bandwidthLists = new HashMap<>();
+        for (int i = 0; i < bandwidths.size(); i++) {
+            bandwidthLists.put(i, new int[150]);
+            Arrays.fill(bandwidthLists.get(i), bandwidths.get(i));
+        }
+        System.out.println(bandwidthLists.size());
+        this.bfsPaths = Traversals.bfsPaths(info.graph, info.clients);
+        clientList = new HashSet<>();
+        priorityList = new HashMap<>();
+        for (Client client : this.clients) {
+            if(client!=null) {
+                clientList.add(client.id);
+                priorityList.put(client.id, (int) (client.alpha * bfsPaths.get(client.id).size()));
             }
         }
-
-        int numClients = 0;
-        for(NetworkNode n : graph.keySet()){
-            if (n.isClient()){
-                numClients++;
-            }
-        }
-
-        return graph;
-    }
-
-    private NetworkNode createNode(int id, int maxPathLength) {
-        int bandwidth = this.bandwidths.get(id);
-
-        Client client = null;
-        for (Client c : this.clients) {
-            if (c.id == id) {
-                client = c;
-                break;
-            }
-        }
-
-        NetworkNode node = null;
-        if (client == null) {
-            client = new Client(id, 0, bandwidth, 0, false, false);
-
-            if (id == this.graph.contentProvider) {
-                node = new NetworkNode(client, bandwidth, false, true, maxPathLength, info);
-            } else {
-                node = new NetworkNode(client, bandwidth, false, false, maxPathLength, info);
-            }
-        } else {
-            node = new NetworkNode(client, bandwidth, true, false, maxPathLength, info);
-        }
-
-        return node;
-    }
-
-    private int getMaxPathLength() {
-        HashMap<Integer, ArrayList<Integer>> paths = Traversals.bfsPaths(this.graph, this.clients);
-
-        double maxLen = 0;
-        for (Client c : this.clients) {
-            if(c.alpha * paths.get(c.id).size() > maxLen){
-                maxLen = c.alpha * paths.get(c.id).size();
-            }
-        }
-
-        return (int)maxLen;
-    }
-
-    private NetworkNode getProvider(HashMap<NetworkNode, ArrayList<NetworkNode>> graph) {
-        for (NetworkNode node : graph.keySet()) {
-            if (node.isProvider()) {
-                return node;
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -113,72 +48,102 @@ public class Solution{
      * of the list of reachable clients, and should yield an optimal result
      */
 
-    private ArrayList<Integer> getPathToClient(HashMap<NetworkNode, ArrayList<NetworkNode>> graph, NetworkNode contentProvider, NetworkNode target, HashMap<Integer, ArrayList<Integer>> bfsPaths) {
-        HashMap<NetworkNode, PathItem> edgeTo = new HashMap<>();
-        Queue<PathItem> queue = new LinkedList<>();
+    private QueueItem getPathToClient(Integer contentProvider, Integer target) {
+        //Djikstra's based on the bandwidth of a node at a given tick of time
+        //Goal is to find the path with the least delay
 
-        queue.add(new PathItem(1, contentProvider)); //why the fuck does pathlength 1 work better
-        while (!edgeTo.containsKey(target) && !queue.isEmpty()) {
-            PathItem item = queue.poll();
-            NetworkNode curr = item.node;
-            int currPathLength = item.pathLength;
-            for (NetworkNode adj : graph.get(curr)) {
-                if (!edgeTo.containsKey(adj) && adj.getBandwidth(currPathLength) > 0) {
-                    edgeTo.put(adj, new PathItem(currPathLength + 1, curr));
-                    queue.add(new PathItem(currPathLength + 1, adj));
+        PriorityQueue<QueueItem> pq = new PriorityQueue<>();
+        HashSet<Integer> visited = new HashSet<>();
+
+        ArrayList<Integer> startPath = new ArrayList<>();
+        QueueItem item = new QueueItem(1, contentProvider, startPath);
+        pq.add(item);
+        while (!pq.isEmpty()) {
+            item = pq.poll();
+            Integer node = item.node;
+            visited.add(node);
+            for (Integer n : graph.get(node)) { //10 ms
+                QueueItem newItem = new QueueItem(item.currDelay, n, item.path);
+                if(n.equals(target)){
+                    return newItem;
+                }
+                else if (!visited.contains(n) && item.pathIsPossible(newItem.currDelay)) {
+                    pq.add(newItem);
                 }
             }
         }
 
-        /// path construction
-        ArrayList<NetworkNode> path = new ArrayList<>();
-        NetworkNode node = target;
+        return null;
+    }
 
-        ArrayList<Integer> pathAsInteger = new ArrayList<>();
+    private ArrayList<Integer> getPath(QueueItem item) {
+        ArrayList<Integer> path = new ArrayList<>();
 
-        pathAsInteger.add(0, node.getClient().id);
-        path.add(0, node);
-        while(!node.equals(contentProvider)) {
-            if (!edgeTo.containsKey(node)) {
-                return new ArrayList<>();
+        int tick = 0;
+        for (int node : item.path) {
+            decrementBandwidth(tick, node);
+            path.add(node);
+            tick+= getDelay(tick, node);
+            if (tick > maxPathLength) {
+                break;
             }
-            NetworkNode from = edgeTo.get(node).node;
-            path.add(0, from);
-            pathAsInteger.add(0, from.getClient().id);
-            node = from;
         }
-
-        int pathSize = pathAsInteger.size();
-        double maxSize = bfsPaths.get(target.getClient().id).size() * target.getClient().alpha;
-        if(pathSize > maxSize ){
-            return null;
-        }
-
-        /// decrement bandwidths
-        for(int i = 0; i < path.size(); i++){
-            NetworkNode n = path.get(i);
-            n.decrementBandwidth(i);
-        }
-
-        // turn path into a list of integers and return
-        return pathAsInteger;
+        return path;
     }
 
 
-    private PriorityQueue<NetworkNode> getClientRanking(HashMap<NetworkNode, ArrayList<NetworkNode>> edgeList){
-        PriorityQueue<NetworkNode> pq = new PriorityQueue<>();
+    private PriorityQueue<Integer> getClientRanking(){
+        PriorityQueue<Integer> pq = new PriorityQueue<>((Integer a,Integer b) -> priorityList.get(a) - priorityList.get(b) );
 
-        double revenue = 0.0;
-        for(Map.Entry<NetworkNode, ArrayList<NetworkNode>> entry : edgeList.entrySet()){
-            NetworkNode node = entry.getKey();
-            if(node.isClient()){
+        for(Integer node : graph.keySet()) {
+            if(clientList.contains(node)) {
                 pq.add(node);
-                revenue+=node.getClient().payment;
             }
         }
 
         return pq;
     }
+
+    public int getDelay(int tick, int node)
+    {
+        int delay = 0;
+        while(bandwidthLists.get(node)[tick] <= 0) { ////////// 5,739 ms
+            delay++;
+            tick++;
+        }
+        return delay;
+    }
+
+    public void decrementBandwidth(int tick, int node){
+        bandwidthLists.get(node)[tick]--;
+    }
+
+    class QueueItem implements Comparable<QueueItem> {
+        int currDelay;
+        ArrayList<Integer> path;
+        Integer node;
+        QueueItem(int prevDelay, int node, ArrayList<Integer> path) {
+            this.currDelay = prevDelay + getDelay(prevDelay, node);
+            this.node = node;
+            this.path = new ArrayList<>(path); // 390ms
+            this.path.add(node);
+        }
+
+        public Boolean pathIsPossible(int currPathLength) {
+            if (this.path.size() - this.currDelay >= this.path.size() - currPathLength) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int compareTo(QueueItem o) {
+            return o.currDelay - this.currDelay;
+        }
+    }
+
+
 
     /**
      * Method that returns the calculated 
@@ -190,27 +155,17 @@ public class Solution{
         SolutionObject sol = new SolutionObject();
         sol.bandwidths = this.bandwidths;
 
-
-        HashMap<NetworkNode, ArrayList<NetworkNode>> edgeList = convertGraph();
-        PriorityQueue<NetworkNode> ranking = getClientRanking(edgeList);
-        HashMap<Integer, ArrayList<Integer>> bfsPaths = Traversals.bfsPaths(graph, clients);
+        PriorityQueue<Integer> ranking = getClientRanking();
 
         while(!ranking.isEmpty()){
-            NetworkNode client = ranking.poll();
-            ArrayList<Integer> path = getPathToClient(edgeList, getProvider(edgeList), client, bfsPaths);
+            Integer client = ranking.poll();
+            QueueItem pathItem = getPathToClient(graph.contentProvider, client); //492 ms
 
-            if(path != null) {
-                sol.paths.put(client.getClient().id, path);
-                sol.priorities.put(client.getClient().id, client.getClient().priority);
-            }
-        }
-
-        int numNodes = 0;
-        HashSet<NetworkNode> counted = new HashSet<>();
-        for(NetworkNode n : edgeList.keySet()){
-            if(!counted.contains(n)){
-                counted.add(n);
-                numNodes++;
+            ArrayList<Integer> path;
+            if(pathItem != null) {
+                path = getPath(pathItem);
+                sol.paths.put(client, path);
+                sol.priorities.put(client, priorityList.get(client));
             }
         }
 
@@ -223,17 +178,24 @@ class NetworkNode implements Comparable<NetworkNode> {
     private Boolean isClient;
     private Boolean isProvider;
     private int bandwidth;
-    int[] bandwidthTicks;
-    Info info;
+    private int[] bandwidthTicks;
+    private int shortestDelay;
+    private int tolerance;
 
-    public NetworkNode(Client client, int bandwidth, Boolean isClient, Boolean isProvider, int maxPathLength, Info info) {
+    public NetworkNode(Client client, int bandwidth, Boolean isClient, Boolean isProvider, int maxPathLength, int shortestDelay) {
         this.client = client;
         this.isClient = isClient;
         this.isProvider = isProvider;
         this.bandwidth = bandwidth;
         bandwidthTicks = new int[maxPathLength];
         Arrays.fill(bandwidthTicks, bandwidth);
-        this.info = info;
+        this.shortestDelay = shortestDelay;
+        if (isClient) {
+            this.tolerance = (int) this.getClient().alpha * this.shortestDelay;
+        }
+        else {
+            this.tolerance = Integer.MAX_VALUE;
+        }
     }
 
     public Client getClient() {
@@ -256,22 +218,27 @@ class NetworkNode implements Comparable<NetworkNode> {
         this.bandwidthTicks[tick]--;
     }
 
+    public int getTolerance() {
+        return this.tolerance;
+    }
+
+    public int getShortestDelay() {
+        return this.shortestDelay;
+    }
+
+    public int getDelay(int tick)
+    {
+        int delay = 0;
+        while(this.bandwidthTicks[tick] <= 0){ ////////// 5,739 ms
+            delay++;
+            tick++;
+        }
+        return delay;
+    }
+
     @Override
     public int compareTo(NetworkNode b) {
-        return (int) ((this.getClient().alpha*info.shortestDelays.get(this.getClient().id))-(b.getClient().alpha*info.shortestDelays.get(b.getClient().id)));
-        //return this.getClient().payment-b.getClient().payment;
+        return (int) (this.getClient().alpha * this.shortestDelay - b.getClient().alpha * b.getShortestDelay());
     }
 }
 
-class PathItem{
-    int pathLength;
-    NetworkNode node;
-    public PathItem(int pathLength, NetworkNode node){
-        this.pathLength = pathLength;
-        this.node = node;
-    }
-
-}
-
-///Class to test our functions to make sure things are processing correctly
-class TestingFunctions{}

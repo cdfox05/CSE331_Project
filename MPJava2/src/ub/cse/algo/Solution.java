@@ -139,7 +139,15 @@ public class Solution{
 
         @Override
         public int compareTo(QueueItem o) {
-            return o.currDelay - this.currDelay;
+            /*
+            int res = this.currDelay - o.currDelay;
+            if (res == 0) {
+                return bandwidths.get(this.node) - bandwidths.get(o.node);
+            }
+            return res;
+
+             */
+            return bandwidths.get(this.node) - bandwidths.get(o.node);
         }
     }
 
@@ -173,72 +181,4 @@ public class Solution{
     }
 }
 
-class NetworkNode implements Comparable<NetworkNode> {
-    private Client client;
-    private Boolean isClient;
-    private Boolean isProvider;
-    private int bandwidth;
-    private int[] bandwidthTicks;
-    private int shortestDelay;
-    private int tolerance;
-
-    public NetworkNode(Client client, int bandwidth, Boolean isClient, Boolean isProvider, int maxPathLength, int shortestDelay) {
-        this.client = client;
-        this.isClient = isClient;
-        this.isProvider = isProvider;
-        this.bandwidth = bandwidth;
-        bandwidthTicks = new int[maxPathLength];
-        Arrays.fill(bandwidthTicks, bandwidth);
-        this.shortestDelay = shortestDelay;
-        if (isClient) {
-            this.tolerance = (int) this.getClient().alpha * this.shortestDelay;
-        }
-        else {
-            this.tolerance = Integer.MAX_VALUE;
-        }
-    }
-
-    public Client getClient() {
-        return this.client;
-    }
-
-    public Boolean isClient() {
-        return this.isClient;
-    }
-
-    public Boolean isProvider() {
-        return this.isProvider;
-    }
-
-    public Integer getBandwidth(int tick) {
-        return this.bandwidthTicks[tick];
-    }
-
-    public void decrementBandwidth(int tick){
-        this.bandwidthTicks[tick]--;
-    }
-
-    public int getTolerance() {
-        return this.tolerance;
-    }
-
-    public int getShortestDelay() {
-        return this.shortestDelay;
-    }
-
-    public int getDelay(int tick)
-    {
-        int delay = 0;
-        while(this.bandwidthTicks[tick] <= 0){ ////////// 5,739 ms
-            delay++;
-            tick++;
-        }
-        return delay;
-    }
-
-    @Override
-    public int compareTo(NetworkNode b) {
-        return (int) (this.getClient().alpha * this.shortestDelay - b.getClient().alpha * b.getShortestDelay());
-    }
-}
 

@@ -29,12 +29,12 @@ public class Solution {
     public SolutionObject outputPaths() {
         SolutionObject sol = new SolutionObject();
 
-        HashMap<Integer, ArrayList<Integer>> paths = Traversals.bfsPaths(this.graph, this.clients);
-        HashMap<Integer, HashMap<Integer, Integer>> bandUsage = new HashMap<>();
+        HashMap<Integer, ArrayList<Integer>> paths = Traversals.bfsPaths(this.graph, this.clients); // get all shortest paths
+        HashMap<Integer, HashMap<Integer, Integer>> bandUsage = new HashMap<>();                    // hashmap to track the used bandwidth of each node
 
-        for (Client client : this.clients) {
-            incBandwidth(paths.get(client.id), bandUsage);
-            sol.paths.put(client.id, paths.get(client.id));
+        for (Client client : this.clients) {                                                        // iterate over every client
+            incBandwidth(paths.get(client.id), bandUsage);                                          // call helper function to track used node bandwidth
+            sol.paths.put(client.id, paths.get(client.id));                                         // add the shortest path to the solution
         }
 
         sol.bandwidths = this.bandwidths;
@@ -43,15 +43,15 @@ public class Solution {
     }
 
     private void incBandwidth(ArrayList<Integer> path, HashMap<Integer, HashMap<Integer, Integer>> bandUsage) {
-        for (int i=1; i<path.size(); i++) {
-            if (!bandUsage.containsKey(i)) {
+        for (int i=1; i<path.size(); i++) {                                                         // iterate over every node in the path besides the provider
+            if (!bandUsage.containsKey(i)) {                                                        // add depth and node if the depth has not been tracked yet
                 bandUsage.put(i, new HashMap<>());
                 bandUsage.get(i).put(path.get(i), 1);
-            } else if (!bandUsage.get(i).containsKey(path.get(i))) {
+            } else if (!bandUsage.get(i).containsKey(path.get(i))) {                                // add node to a depth if not already present
                 bandUsage.get(i).put(path.get(i), 1);
-            } else if (bandUsage.get(i).get(path.get(i)) < this.bandwidths.get(path.get(i))) {
+            } else if (bandUsage.get(i).get(path.get(i)) < this.bandwidths.get(path.get(i))) {      // increment used bandwidth for nodes below their capacity
                 bandUsage.get(i).put(path.get(i), bandUsage.get(i).get(path.get(i)) + 1);
-            } else if (bandUsage.get(i).get(path.get(i)) >= this.bandwidths.get(path.get(i))) {
+            } else if (bandUsage.get(i).get(path.get(i)) >= this.bandwidths.get(path.get(i))) {     // increase the bandwidth for nodes at or above their capacity
                 bandUsage.get(i).put(path.get(i), bandUsage.get(i).get(path.get(i)) + 1);
                 this.bandwidths.set(path.get(i), bandUsage.get(i).get(path.get(i)));
             }
